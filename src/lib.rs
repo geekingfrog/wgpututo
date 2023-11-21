@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
@@ -10,6 +12,9 @@ mod texture;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
+
+const FRAMES_PER_SECOND_CAP: u128 = 120;
+const MUS_PER_FRAME_CAP: u128 = 1000000 / FRAMES_PER_SECOND_CAP;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -214,6 +219,7 @@ impl CameraController {
 }
 
 struct State {
+    last_update: Instant,
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -466,6 +472,7 @@ impl State {
         });
 
         Self {
+            last_update: Instant::now(),
             surface,
             device,
             queue,
@@ -635,13 +642,17 @@ pub async fn run() {
             }
         }
         Event::RedrawRequested(window_id) if window_id == state.window().id() => {
-            state.update();
-            match state.render() {
-                Ok(_) => {}
-                // Reconfigure the surface if lost
-                Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
-                Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                Err(err) => eprintln!("{err:?}"),
+            let time_since_last_frame = state.last_update.elapsed();
+            if time_since_last_frame.as_micros() > MUS_PER_FRAME_CAP {
+                state.update();
+                match state.render() {
+                    Ok(_) => {}
+                    // Reconfigure the surface if lost
+                    Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
+                    Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+                    Err(err) => eprintln!("{err:?}"),
+                }
+                state.last_update = Instant::now();
             }
         }
         Event::MainEventsCleared => {
