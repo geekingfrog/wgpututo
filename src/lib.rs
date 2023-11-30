@@ -321,6 +321,7 @@ impl State {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
             dx12_shader_compiler: Default::default(),
+            ..Default::default()
         });
 
         // # Safety
@@ -418,7 +419,7 @@ impl State {
         // or:
         // let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
-        let modes = &surface_caps.present_modes;
+        // let modes = &surface_caps.present_modes;
         // println!("present modes of the surface: {modes:?}");
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -649,10 +650,12 @@ impl State {
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(clear_color),
-                        store: true,
+                        store: wgpu::StoreOp::Store,
                     },
                 })],
                 depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
