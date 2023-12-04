@@ -1,1 +1,1 @@
-See [this tutorial](https://sotrh.github.io/learn-wgpu/beginner/)
+See [this tutorial](https://sotrh.github.io/learn-wgpu/)
